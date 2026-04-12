@@ -66,14 +66,15 @@ export function OnboardingFlow() {
       }
 
       // First, complete business onboarding
-      const businessProfile = await dispatch(onboardBusiness({
+      const onboardResult = await dispatch(onboardBusiness({
         name: data.businessName,
         ownerName: data.ownerName,
         address: data.address,
-        business_type: data.business_type,
+        business_type: data.businessType,
         currency: data.currency,
         plan: PlanType.FREE, // Default to free plan since pricing is removed from onboarding
       })).unwrap();
+      const businessProfile = onboardResult.business;
 
       // Use the already imported supabase client for direct database operations
 
