@@ -14,6 +14,13 @@ export default function WorkspaceDashboard() {
   const { workspace, isOwner, isStaff } = useWorkspace();
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('dashboard');
 
+  // Wrapper function to handle type conversion
+  const handleSetActiveTab = (tab: string) => {
+    if (['dashboard', 'inventory', 'staff', 'settings'].includes(tab)) {
+      setActiveTab(tab as WorkspaceTab);
+    }
+  };
+
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
     { id: 'inventory', name: 'Inventory', icon: Package },
@@ -45,7 +52,7 @@ export default function WorkspaceDashboard() {
   }
 
   return (
-    <AppLayout activeTab={activeTab} setActiveTab={setActiveTab} navigation={navigation}>
+    <AppLayout activeTab={activeTab} setActiveTab={handleSetActiveTab} navigation={navigation}>
       <div className="p-6">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-neutral-900 font-primary">
