@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
 import { fetchBusinessProfile } from '@/store/slices/authSlice';
+import { UserRole } from '@/types';
 
 interface Workspace {
   id: string;
@@ -49,8 +50,8 @@ export function WorkspaceProvider({ children, subdomain }: WorkspaceProviderProp
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isOwner = user?.role === 'owner' || user?.role === 'OWNER';
-  const isStaff = user?.role === 'employee' || user?.role === 'EMPLOYEE';
+  const isOwner = user?.role === UserRole.OWNER;
+  const isStaff = user?.role === UserRole.EMPLOYEE;
 
   const refreshWorkspace = async () => {
     if (!isAuthenticated || !subdomain) {
