@@ -70,7 +70,7 @@ export function OnboardingFlow() {
         name: data.businessName,
         ownerName: data.ownerName,
         address: data.address,
-        business_type: data.businessType,
+        business_type: data.business_type,
         currency: data.currency,
         plan: PlanType.FREE, // Default to free plan since pricing is removed from onboarding
       })).unwrap();
