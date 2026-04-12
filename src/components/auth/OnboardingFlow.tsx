@@ -97,7 +97,7 @@ export function OnboardingFlow() {
               // If user exists, skip adding them
               if (existingUser) {
                 console.log(`User ${staff.email} already exists in system. Skipping.`);
-                toast.info(`Staff member ${staff.email} already exists and was skipped.`);
+                toast(`Staff member ${staff.email} already exists and was skipped.`);
                 continue;
               }
 
@@ -121,7 +121,7 @@ export function OnboardingFlow() {
               if (staffError) {
                 console.error('Error saving staff:', staffError);
                 if (staffError.code === '23505' || staffError.message.includes('duplicate key')) {
-                  toast.info(`Staff member ${staff.email} already exists and was skipped.`);
+                  toast(`Staff member ${staff.email} already exists and was skipped.`);
                 } else {
                   toast.error(`Error saving staff ${staff.email}: ${staffError.message}`);
                 }
