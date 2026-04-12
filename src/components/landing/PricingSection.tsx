@@ -7,7 +7,7 @@ export function PricingSection() {
   const plans = [
     {
       name: 'Starter',
-      price: '₦4,900',
+      price: '####',
       period: '/mo',
       desc: 'Perfect for solo traders and micro businesses just getting started.',
       color: 'bg-white border-slate-100',
@@ -24,7 +24,7 @@ export function PricingSection() {
     },
     {
       name: 'Growth',
-      price: '₦9,900',
+      price: '####',
       period: '/mo',
       desc: 'For growing SMEs that need powerful tools and team management.',
       color: 'bg-brand-ultraDarkGreen text-white border-brand-ultraDarkGreen',
@@ -44,7 +44,7 @@ export function PricingSection() {
     },
     {
       name: 'Enterprise',
-      price: '₦24,900',
+      price: '####',
       period: '/mo',
       desc: 'For established businesses with multiple branches and advanced needs.',
       color: 'bg-white border-slate-100',
