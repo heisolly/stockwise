@@ -75,6 +75,10 @@ export function OnboardingFlow() {
         plan: PlanType.FREE, // Default to free plan since pricing is removed from onboarding
       })).unwrap();
       const businessProfile = onboardResult.business;
+      
+      if (!businessProfile) {
+        throw new Error('Failed to create business profile');
+      }
 
       // Use the already imported supabase client for direct database operations
 
