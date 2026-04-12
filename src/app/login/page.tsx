@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast';
 import { Eye, EyeOff, ArrowRight, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { UserRole } from '@/types';
 
 interface LoginFormData {
   email: string;
@@ -25,7 +26,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (isAuthenticated && user && businessProfile) {
       // Redirect staff to their workspace subdomain
-      if (user.role === 'EMPLOYEE' || user.role === 'employee') {
+      if (user.role === UserRole.EMPLOYEE) {
         const subdomain = businessProfile.subdomain || businessProfile.name.toLowerCase().replace(/\s+/g, '-');
         window.location.href = `https://${subdomain}.stockwise.com/dashboard`;
       } else {
