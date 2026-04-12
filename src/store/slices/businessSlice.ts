@@ -24,7 +24,7 @@ export const fetchBusinessProfile = createAsyncThunk(
       .single();
     
     if (error) throw error;
-    return data as BusinessProfile;
+    return data as unknown as BusinessProfile;
   }
 );
 
@@ -42,7 +42,7 @@ export const updateBusinessProfile = createAsyncThunk(
       .single();
     
     if (error) throw error;
-    return data as BusinessProfile;
+    return data as unknown as BusinessProfile;
   }
 );
 
