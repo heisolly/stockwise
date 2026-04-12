@@ -273,7 +273,7 @@ export function StaffManager() {
           </div>
           <select
             value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
+            onChange={(e) => setFilterRole(e.target.value as UserRole | 'all')}
             className="input-field"
           >
             <option value="all">All Roles</option>
