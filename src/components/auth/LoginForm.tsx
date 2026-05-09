@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store';
-import { loginUser, registerUser } from '@/store/slices/authSlice';
+import { loginUser, registerOwner } from '@/store/slices/authSlice';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,7 +52,7 @@ export function LoginForm() {
   const onRegister = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      await dispatch(registerUser({
+      await dispatch(registerOwner({
         email: data.email,
         password: data.password,
         businessName: data.businessName,

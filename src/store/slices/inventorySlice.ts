@@ -58,31 +58,52 @@ export const fetchProducts = createAsyncThunk(
 
 export const addProduct = createAsyncThunk(
   'inventory/addProduct',
-  async (product: Omit<Product, 'id' | 'businessId' | 'createdAt' | 'updatedAt'>) => {
+  async (
+    { product, businessId }: { product: Omit<Product, 'id' | 'businessId' | 'createdAt' | 'updatedAt'>; businessId: string },
+    { getState }
+  ) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
     const { data, error } = await (supabase as any)
       .from('products')
       .insert({
-        ...product,
-        business_id: user.user_metadata.business_id,
+        name: product.name,
+        description: product.description,
+        category: product.category,
+        sku: product.sku,
+        barcode: product.barcode,
+        cost_price: product.costPrice,
+        selling_price: product.sellingPrice,
+        quantity: product.quantity,
+        low_stock_threshold: product.lowStockThreshold,
+        image_url: product.imageUrl,
+        is_active: product.isActive,
+        business_id: businessId,
+        created_by: user.id,
       })
       .select()
       .single();
     
     if (error) throw error;
-    
-    // Log activity
-    await (supabase as any).from('activity_logs').insert({
-      business_id: user.user_metadata.business_id,
-      type: ActivityType.STOCK_IN,
-      product_id: data.id,
-      description: `New product added: ${product.name}`,
-      performed_by: user.id,
-    });
 
-    return data as Product;
+    return {
+      id: data.id,
+      businessId: data.business_id,
+      name: data.name,
+      description: data.description,
+      category: data.category,
+      sku: data.sku,
+      barcode: data.barcode,
+      costPrice: data.cost_price,
+      sellingPrice: data.selling_price,
+      quantity: data.quantity,
+      lowStockThreshold: data.low_stock_threshold,
+      imageUrl: data.image_url,
+      isActive: data.is_active,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    } as Product;
   }
 );
 
@@ -110,12 +131,14 @@ export const updateStock = createAsyncThunk(
     productId, 
     quantity, 
     type, 
-    reason 
+    reason,
+    businessId,
   }: { 
     productId: string; 
     quantity: number; 
     type: 'ADD' | 'REMOVE' | 'ADJUST'; 
     reason?: string;
+    businessId: string;
   }) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
@@ -138,6 +161,7 @@ export const updateStock = createAsyncThunk(
       .from('products')
       .update({
         quantity: Math.max(0, newQuantity),
+        updated_by: user.id,
         updated_at: new Date().toISOString(),
       })
       .eq('id', productId)
@@ -146,21 +170,23 @@ export const updateStock = createAsyncThunk(
 
     if (error) throw error;
 
-    // Log activity
-    const activityType = type === 'ADD' ? ActivityType.STOCK_IN : ActivityType.STOCK_OUT;
-    const displayQty = type === 'ADJUST' ? newQuantity : quantity;
-    
-    await (supabase as any).from('activity_logs').insert({
-      business_id: user.user_metadata.business_id,
-      type: activityType,
-      product_id: productId,
-      quantity_change: displayQty,
-      reason,
-      description: `${type} stock for ${product.name}: ${displayQty} units`,
-      performed_by: user.id,
-    });
-
-    return data as Product;
+    return {
+      id: data.id,
+      businessId: data.business_id,
+      name: data.name,
+      description: data.description,
+      category: data.category,
+      sku: data.sku,
+      barcode: data.barcode,
+      costPrice: data.cost_price,
+      sellingPrice: data.selling_price,
+      quantity: data.quantity,
+      lowStockThreshold: data.low_stock_threshold,
+      imageUrl: data.image_url,
+      isActive: data.is_active,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    } as Product;
   }
 );
 

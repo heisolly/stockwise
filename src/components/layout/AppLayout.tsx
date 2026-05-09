@@ -81,8 +81,6 @@ export function AppLayout({
   const [isMobile, setIsMobile] = useState(false);
   const mediaQuery = useMediaQuery('(max-width: 768px)');
 
-  console.log('AppLayout: Rendering with user:', !!user, 'businessProfile:', !!businessProfile);
-
   // Use external navigation if provided, otherwise use default
   const currentActiveTab = externalActiveTab || internalActiveTab;
   const currentSetActiveTab = externalSetActiveTab || setInternalActiveTab;
@@ -210,99 +208,117 @@ export function AppLayout({
           x: sidebarOpen ? 0 : (isMobile ? -280 : 0),
           opacity: sidebarOpen ? 1 : 0
         }}
-        transition={{ duration: 0.2, ease: 'easeInOut' }}
-        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-neutral-200 overflow-hidden flex flex-col lg:shadow-sm`}
+        transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="fixed inset-y-0 left-0 z-50 bg-white border-r border-neutral-200/80 overflow-hidden flex flex-col shadow-[0_0_40px_-10px_rgba(0,0,0,0.08)]"
       >
         <div className="flex flex-col h-full">
-          {/* Header with Toggle */}
-          <div className="h-16 flex items-center justify-between px-4 border-b border-neutral-100">
-            {!sidebarCollapsed && (
-              <div className="flex items-center">
-                <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center mr-3">
-                  <Package className="w-5 h-5 text-white" />
+          {/* Logo Header */}
+          <div className="h-[68px] flex items-center px-5 border-b border-neutral-100/80 shrink-0">
+            {!sidebarCollapsed ? (
+              <div className="flex items-center gap-3 w-full">
+                <div className="w-9 h-9 bg-primary-500 rounded-xl flex items-center justify-center shadow-sm shadow-primary-500/20">
+                  <Package className="w-[18px] h-[18px] text-white" strokeWidth={2.5} />
                 </div>
-                <div>
-                  <h1 className="text-lg font-semibold text-neutral-900 font-primary">StockWise</h1>
-                  <p className="text-xs text-neutral-500 font-secondary">Inventory Management</p>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-[15px] font-semibold text-neutral-900 font-primary leading-tight tracking-tight">StockWise</h1>
                 </div>
+                {!isMobile && (
+                  <button
+                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-all"
+                  >
+                    <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`} />
+                  </button>
+                )}
               </div>
-            )}
-            {sidebarCollapsed && (
-              <div className="w-full flex justify-center">
-                <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-                  <Package className="w-5 h-5 text-white" />
+            ) : (
+              <div className="w-full flex items-center justify-between">
+                <div className="w-9 h-9 bg-primary-500 rounded-xl flex items-center justify-center shadow-sm shadow-primary-500/20">
+                  <Package className="w-[18px] h-[18px] text-white" strokeWidth={2.5} />
                 </div>
+                {!isMobile && (
+                  <button
+                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-all"
+                  >
+                    <ChevronRight className="w-4 h-4 rotate-180" />
+                  </button>
+                )}
               </div>
-            )}
-            {!isMobile && (
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 rounded-lg transition-colors"
-              >
-                <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`} />
-              </button>
             )}
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-8 space-y-6 overflow-y-auto">
-            {filteredNavigation.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  currentSetActiveTab(item.id as NavigationTab);
-                  if (isMobile) setSidebarOpen(false);
-                }}
-                className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-4' : 'px-6'} py-4 text-sm font-medium rounded-lg transition-colors ${
-                  currentActiveTab === item.id
-                    ? 'bg-primary-50 text-primary-700 border-l-2 border-primary-500'
-                    : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
-                }`}
-                title={sidebarCollapsed ? item.name : undefined}
-              >
-                <item.icon className={`w-6 h-6 ${sidebarCollapsed ? '' : 'mr-6'} ${
-                  currentActiveTab === item.id ? 'text-primary-600' : 'text-neutral-400'
-                }`} />
-                {!sidebarCollapsed && (
-                  <span className="font-secondary">{item.name}</span>
-                )}
-              </button>
-            ))}
+          <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto scrollbar-thin">
+            <div className="mb-2 px-3">
+              <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-[0.15em] font-primary">Menu</p>
+            </div>
+            {filteredNavigation.map((item) => {
+              const isActive = currentActiveTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    currentSetActiveTab(item.id as NavigationTab);
+                    if (isMobile) setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3.5 rounded-xl transition-all duration-200 group ${
+                    sidebarCollapsed ? 'justify-center px-0 py-3' : 'px-3.5 py-2.5'
+                  } ${
+                    isActive
+                      ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20'
+                      : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900'
+                  }`}
+                  title={sidebarCollapsed ? item.name : undefined}
+                >
+                  <item.icon 
+                    className={`w-[18px] h-[18px] shrink-0 transition-colors ${
+                      isActive ? 'text-white' : 'text-neutral-400 group-hover:text-neutral-600'
+                    }`} 
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                  {!sidebarCollapsed && (
+                    <span className={`text-[13px] font-medium font-secondary tracking-tight ${isActive ? 'text-white' : ''}`}>
+                      {item.name}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </nav>
 
           {/* User Profile Footer */}
-          <div className="p-6 border-t border-neutral-100">
+          <div className="p-4 border-t border-neutral-100/80 shrink-0">
             {!sidebarCollapsed ? (
-              <>
-                <div className="flex items-center space-x-4 mb-6">
-                  <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600 text-base font-medium">
-                    {user?.name?.charAt(0) || 'U'}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-primary-500/10 flex items-center justify-center text-primary-500 text-sm font-semibold shrink-0">
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-medium text-neutral-900 truncate font-primary">{user?.name}</p>
-                    <p className="text-sm text-neutral-500 truncate font-secondary">{user?.email}</p>
+                    <p className="text-[13px] font-semibold text-neutral-900 font-primary truncate leading-tight">{user?.name}</p>
+                    <p className="text-[11px] text-neutral-400 font-secondary truncate" title={user?.email}>{user?.email}</p>
                   </div>
                 </div>
-                
                 <button 
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center px-4 py-3 text-sm text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 rounded-lg transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[12px] font-medium text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 rounded-xl transition-all"
                 >
-                  <LogOut className="w-5 h-5 mr-3" />
+                  <LogOut className="w-3.5 h-3.5" />
                   Sign Out
                 </button>
-              </>
+              </div>
             ) : (
-              <div className="flex flex-col items-center space-y-6">
-                <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600 text-base font-medium">
-                  {user?.name?.charAt(0) || 'U'}
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-9 h-9 rounded-full bg-primary-500/10 flex items-center justify-center text-primary-500 text-sm font-semibold">
+                  {user?.name?.charAt(0).toUpperCase() || 'U'}
                 </div>
                 <button 
                   onClick={handleLogout}
-                  className="p-3 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 rounded-lg transition-colors"
+                  className="p-2 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 rounded-xl transition-all"
                   title="Sign Out"
                 >
-                  <LogOut className="w-5 h-5" />
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -311,61 +327,67 @@ export function AppLayout({
       </motion.aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <div 
+        className="flex-1 flex flex-col min-h-screen overflow-hidden"
+        style={{ 
+          marginLeft: !isMobile && sidebarOpen ? (sidebarCollapsed ? 80 : 250) : 0,
+          transition: 'margin-left 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+        }}
+      >
         {/* Header */}
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-neutral-300 sticky top-0 z-30 px-6 sm:px-8 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <header className="h-16 bg-white/90 backdrop-blur-xl border-b border-neutral-200/60 sticky top-0 z-30 px-5 sm:px-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-neutral-100 rounded-lg text-neutral-500 transition-colors"
+              className="p-2 hover:bg-neutral-100 rounded-xl text-neutral-500 transition-all"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-[18px] h-[18px]" strokeWidth={2} />
             </button>
             <div className="hidden sm:block">
-              <h2 className="text-sm font-semibold text-neutral-700 uppercase tracking-widest font-primary">{currentActiveTab.replace('-', ' ')}</h2>
+              <h2 className="text-[11px] font-semibold text-neutral-400 uppercase tracking-[0.15em] font-primary">
+                {currentActiveTab.replace('-', ' ')}
+              </h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-6">
-            {/* Search Bar */}
+          <div className="flex items-center gap-2 sm:gap-5">
+            {/* Search */}
             <div className="hidden md:flex items-center relative">
-              <Search className="w-4 h-4 text-neutral-500 absolute left-3" />
+              <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3" strokeWidth={2} />
               <input 
                 type="text" 
-                placeholder="Global search..." 
-                className="input-field pl-10 pr-4 text-sm w-64"
+                placeholder="Search..." 
+                className="h-9 pl-9 pr-4 text-[13px] font-secondary bg-neutral-50 border border-neutral-200/60 rounded-xl text-neutral-700 placeholder:text-neutral-400 focus:outline-none focus:border-primary-500/40 focus:ring-2 focus:ring-primary-500/10 w-56 transition-all"
               />
             </div>
 
             {/* Notifications */}
-            <div className="relative">
-              <button className="p-2.5 hover:bg-neutral-100 rounded-lg text-neutral-500 transition-colors relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-accent-lime rounded-full border-2 border-white"></span>
-              </button>
-            </div>
+            <button className="relative p-2 hover:bg-neutral-100 rounded-xl text-neutral-500 transition-all">
+              <Bell className="w-[18px] h-[18px]" strokeWidth={2} />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+            </button>
 
             {/* Business Info */}
-            <div className="flex items-center gap-3 pl-3 sm:pl-6 border-l border-neutral-300">
-              <div className="text-right hidden xs:block">
-                <p className="text-sm font-semibold text-neutral-900 leading-none font-primary">{businessProfile?.name}</p>
-                <p className="text-[10px] font-bold text-accent-lime uppercase mt-1 tracking-tighter font-secondary">Verified Business</p>
+            <div className="flex items-center gap-3 pl-3 sm:pl-5 border-l border-neutral-200/60">
+              <div className="text-right hidden sm:block">
+                <p className="text-[13px] font-semibold text-neutral-900 leading-none font-primary">{businessProfile?.name}</p>
+                <p className="text-[10px] font-medium text-emerald-600 uppercase mt-1 tracking-wide font-secondary">Verified</p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-primary-500 flex items-center justify-center text-white text-xs font-semibold shadow-lg">
-                SW
+              <div className="w-9 h-9 rounded-xl bg-primary-500 flex items-center justify-center text-white text-[11px] font-bold shadow-sm shadow-primary-500/20">
+                {businessProfile?.name?.charAt(0).toUpperCase() || 'S'}
               </div>
             </div>
           </div>
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 sm:p-8">
+        <main className="flex-1 overflow-y-auto p-5 sm:p-8">
           <div className="max-w-7xl mx-auto">
             <motion.div
               key={currentActiveTab}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
             >
               {renderContent()}
             </motion.div>

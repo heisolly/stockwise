@@ -1,25 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '@/store';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 import { UserRole, User } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
-  Plus,
-  Mail,
-  Shield,
-  Calendar,
-  MoreVertical,
   Edit,
   Trash2,
   UserPlus,
   UserCheck,
   UserX,
   Search,
-  Filter
+  Filter,
+  Copy,
+  X,
+  Check,
+  ExternalLink,
+  Share2,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
@@ -33,7 +33,6 @@ interface StaffFormData {
 
 export function StaffManager() {
   const { user: currentUser, businessProfile } = useSelector((state: RootState) => state.auth);
-  const dispatch = useDispatch<AppDispatch>();
   const [activeTab, setActiveTab] = useState<'staff' | 'invitations'>('staff');
   const [showAddForm, setShowAddForm] = useState(false);
   const [staff, setStaff] = useState<User[]>([]);
@@ -42,6 +41,8 @@ export function StaffManager() {
   const [filterRole, setFilterRole] = useState<UserRole | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [editingStaff, setEditingStaff] = useState<User | null>(null);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const {
     register,
@@ -100,23 +101,20 @@ export function StaffManager() {
         toast.success('Staff member updated successfully');
         setEditingStaff(null);
       } else {
-        // Add new staff member
-        const tempPassword = Math.random().toString(36).slice(-8);
-        
-        const { error } = await supabase.auth.signUp({
-          email: data.email,
-          password: tempPassword,
-          options: {
-            data: {
-              name: data.name,
-              role: data.role,
-              business_id: businessProfile.id,
-            }
-          }
+        // Send invite via RPC (does NOT touch current auth session)
+        const { data: inviteData, error: inviteError } = await supabase.rpc('invite_employee', {
+          p_business_id: businessProfile.id,
+          p_email: data.email.toLowerCase(),
+          p_role: data.role,
         });
 
-        if (error) throw error;
-        toast.success(`Staff member added! Temporary password: ${tempPassword}`);
+        if (inviteError) throw inviteError;
+
+        // Generate shareable invite link using the business invite code
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        const link = `${baseUrl}/signup/employee?code=${businessProfile.inviteCode}`;
+        setInviteLink(link);
+        toast.success(`Invitation sent to ${data.email}`);
       }
       
       reset();
@@ -468,6 +466,114 @@ export function StaffManager() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Invite Link Share Modal */}
+      <AnimatePresence>
+        {inviteLink && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setInviteLink(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                    <Share2 className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-neutral-900 font-primary">
+                      Share Invite Link
+                    </h3>
+                    <p className="text-xs text-neutral-500 font-secondary">
+                      Send this link to your team member
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setInviteLink(null)}
+                  className="text-neutral-400 hover:text-neutral-600 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="bg-neutral-50 rounded-xl p-4 mb-4 border border-neutral-200/60">
+                <label className="block text-xs font-medium text-neutral-500 mb-2 uppercase tracking-wider font-primary">
+                  Invite Link
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-white rounded-lg border border-neutral-200 px-3 py-2.5 text-sm text-neutral-700 font-mono break-all font-secondary">
+                    {inviteLink}
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteLink);
+                      setCopied(true);
+                      toast.success('Copied to clipboard!');
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="shrink-0 px-3 py-2.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors flex items-center gap-1.5"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span className="text-sm font-medium">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        <span className="text-sm font-medium">Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <a
+                  href={inviteLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-neutral-200 text-neutral-700 rounded-xl hover:bg-neutral-50 transition-colors text-sm font-medium"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Open Link
+                </a>
+                <button
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'Join StockWise',
+                        text: 'You have been invited to join StockWise! Click the link below to create your account:',
+                        url: inviteLink,
+                      }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(inviteLink);
+                      setCopied(true);
+                      toast.success('Link copied for sharing!');
+                      setTimeout(() => setCopied(false), 2000);
+                    }
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-colors text-sm font-medium"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

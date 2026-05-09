@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
-import { registerUser } from '@/store/slices/authSlice';
+import { registerOwner } from '@/store/slices/authSlice';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { Eye, EyeOff, ArrowRight, CheckCircle2 } from 'lucide-react';
@@ -40,7 +40,12 @@ export default function RegisterPage() {
   const onRegister = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      await dispatch(registerUser(data)).unwrap();
+      await dispatch(registerOwner({
+        email: data.email,
+        password: data.password,
+        businessName: data.businessName,
+        ownerName: data.ownerName,
+      })).unwrap();
       toast.success("Welcome to StockWise! Let's set up your business.");
       router.push('/app');
     } catch (err: any) {

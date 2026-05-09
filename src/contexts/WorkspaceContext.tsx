@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/store';
-import { fetchBusinessProfile } from '@/store/slices/authSlice';
+import { fetchCurrentUser } from '@/store/slices/authSlice';
 import { UserRole } from '@/types';
 
 interface Workspace {
@@ -64,7 +64,7 @@ export function WorkspaceProvider({ children, subdomain }: WorkspaceProviderProp
       setError(null);
       
       // Fetch business profile for the subdomain
-      await dispatch(fetchBusinessProfile()).unwrap();
+      await dispatch(fetchCurrentUser()).unwrap();
       
       if (businessProfile) {
         const workspaceData: Workspace = {

@@ -1,28 +1,58 @@
 'use client';
 
-import { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '@/store';
-import { UserPlus, Mail, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { UserRole } from '@/types';
+import { supabase } from '@/lib/supabase';
+import { UserPlus, Mail, Clock, CheckCircle, XCircle, Copy, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
-interface Invitation {
+interface DbInvitation {
   id: string;
   email: string;
   role: string;
-  status: 'pending' | 'accepted' | 'expired';
-  createdAt: string;
-  expiresAt: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+  accepted_at?: string;
+  token: string;
 }
 
 export function StaffInvitation() {
-  const dispatch = useDispatch<AppDispatch>();
-  const { businessProfile } = useSelector((state: RootState) => state.auth);
+  const { businessProfile, user } = useSelector((state: RootState) => state.auth);
   
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('employee');
+  const [role, setRole] = useState(UserRole.EMPLOYEE);
   const [isInviting, setIsInviting] = useState(false);
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [invitations, setInvitations] = useState<DbInvitation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  // Fetch invitations from database
+  const fetchInvitations = async () => {
+    if (!businessProfile?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('organization_invites')
+        .select('*')
+        .eq('business_id', businessProfile.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setInvitations(data || []);
+    } catch (error) {
+      console.error('Failed to fetch invitations:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInvitations();
+  }, [businessProfile?.id]);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,33 +62,35 @@ export function StaffInvitation() {
     setIsInviting(true);
     
     try {
-      // Create invitation token
-      const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      const invitationData = {
-        id: token,
-        email: email.toLowerCase(),
-        role,
-        businessId: businessProfile.id,
-        businessName: businessProfile.name,
-        status: 'pending' as const,
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
-      };
+      // Call the RPC function to invite employee
+      const { data, error } = await supabase.rpc('invite_employee', {
+        p_business_id: businessProfile.id,
+        p_email: email.toLowerCase(),
+        p_role: role,
+      });
 
-      // TODO: Save to database and send email
-      console.log('Invitation created:', invitationData);
+      if (error) throw error;
       
-      setInvitations(prev => [invitationData, ...prev]);
+      toast.success(`Invitation sent to ${email}`);
       setEmail('');
       
-      // Show success message
-      alert(`Invitation sent to ${email}`);
+      // Refresh invitations list
+      await fetchInvitations();
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send invitation:', error);
-      alert('Failed to send invitation');
+      toast.error(error.message || 'Failed to send invitation');
     } finally {
       setIsInviting(false);
+    }
+  };
+
+  const handleCopyInviteCode = () => {
+    if (businessProfile?.inviteCode) {
+      navigator.clipboard.writeText(businessProfile.inviteCode);
+      setCopied(true);
+      toast.success('Invite code copied to clipboard!');
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -90,9 +122,43 @@ export function StaffInvitation() {
 
   return (
     <div className="space-y-6">
+      {/* Invite Code Card */}
+      <div className="card bg-gradient-to-r from-[#004838] to-[#00664d]">
+        <h3 className="text-lg font-semibold text-white mb-2 font-primary">
+          Organization Invite Code
+        </h3>
+        <p className="text-white/70 text-sm mb-4">
+          Share this code with your employees to let them join your organization
+        </p>
+        
+        <div className="flex items-center gap-3">
+          <div className="flex-1 bg-white/10 rounded-lg px-4 py-3 border border-white/20">
+            <span className="text-white font-mono text-lg tracking-wider">
+              {businessProfile?.inviteCode || 'Loading...'}
+            </span>
+          </div>
+          <button
+            onClick={handleCopyInviteCode}
+            className="p-3 bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 transition-colors"
+          >
+            {copied ? (
+              <Check className="w-5 h-5 text-green-400" />
+            ) : (
+              <Copy className="w-5 h-5 text-white" />
+            )}
+          </button>
+        </div>
+        
+        <p className="text-white/50 text-xs mt-3">
+          Employees can join at: /signup/employee?code={businessProfile?.inviteCode}
+        </p>
+      </div>
+
       {/* Invite Staff Form */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-neutral-900 mb-4 font-primary">Invite Staff Member</h3>
+        <h3 className="text-lg font-semibold text-neutral-900 mb-4 font-primary">
+          Invite Staff Member
+        </h3>
         
         <form onSubmit={handleInvite} className="space-y-4">
           <div>
@@ -118,11 +184,11 @@ export function StaffInvitation() {
             </label>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value)}
+              onChange={(e) => setRole(e.target.value as UserRole)}
               className="input-field"
             >
-              <option value="employee">Employee</option>
-              <option value="manager">Manager</option>
+              <option value={UserRole.EMPLOYEE}>Employee</option>
+              <option value={UserRole.MANAGER}>Manager</option>
             </select>
           </div>
 
@@ -139,9 +205,15 @@ export function StaffInvitation() {
 
       {/* Invitations List */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-neutral-900 mb-4 font-primary">Pending Invitations</h3>
+        <h3 className="text-lg font-semibold text-neutral-900 mb-4 font-primary">
+          Pending Invitations ({invitations.length})
+        </h3>
         
-        {invitations.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-8">
+            <div className="w-8 h-8 border-2 border-[#004838] border-t-transparent rounded-full animate-spin mx-auto" />
+          </div>
+        ) : invitations.length === 0 ? (
           <div className="text-center py-8">
             <Mail className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
             <p className="text-neutral-500 font-medium font-primary">No invitations sent yet</p>
@@ -163,7 +235,12 @@ export function StaffInvitation() {
                   <div>
                     <p className="font-medium text-neutral-900 font-secondary">{invitation.email}</p>
                     <p className="text-sm text-neutral-500 font-secondary capitalize">
-                      {invitation.role} • Invited {new Date(invitation.createdAt).toLocaleDateString()}
+                      {invitation.role} • Invited {new Date(invitation.created_at).toLocaleDateString()}
+                      {invitation.status === 'pending' && (
+                        <span className="text-amber-600 ml-2">
+                          (Expires {new Date(invitation.expires_at).toLocaleDateString()})
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>

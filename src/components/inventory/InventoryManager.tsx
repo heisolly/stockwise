@@ -81,7 +81,10 @@ export function InventoryManager() {
         })).unwrap();
         toast.success('Product updated successfully!');
       } else {
-        await dispatch(addProduct(data)).unwrap();
+        await dispatch(addProduct({ 
+          product: data, 
+          businessId: businessProfile.id 
+        })).unwrap();
         toast.success('Product added successfully!');
       }
       
@@ -94,8 +97,10 @@ export function InventoryManager() {
   };
 
   const handleStockUpdate = async (productId: string, quantity: number, type: 'ADD' | 'REMOVE' | 'ADJUST', reason?: string) => {
+    if (!businessProfile?.id) return;
+    
     try {
-      await dispatch(updateStock({ productId, quantity, type, reason })).unwrap();
+      await dispatch(updateStock({ productId, quantity, type, reason, businessId: businessProfile.id })).unwrap();
       toast.success(`Stock ${type.toLowerCase()}ed successfully!`);
       setStockUpdateModal(null);
     } catch (error: any) {

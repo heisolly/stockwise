@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store';
-import { setBusinessProfile, onboardBusiness, fetchCurrentUser } from '@/store/slices/authSlice';
+import { setBusinessProfile, fetchCurrentUser } from '@/store/slices/authSlice';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,7 +11,7 @@ import {
   NIGERIAN_BUSINESS_CATEGORIES, 
   PLAN_DETAILS 
 } from '@/constants';
-import { BusinessProfile as BusinessProfileType, PlanType } from '@/types';
+import { BusinessProfile as BusinessProfileType, PlanType, UserRole } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { CheckCircle2, ArrowRight, Building2, Users } from 'lucide-react';
 import Link from 'next/link';
@@ -65,77 +65,57 @@ export function OnboardingFlow() {
         throw new Error('Session expired. Please log in again.');
       }
 
-      // First, complete business onboarding
-      const onboardResult = await dispatch(onboardBusiness({
-        name: data.businessName,
-        ownerName: data.ownerName,
-        address: data.address,
-        business_type: data.business_type,
-        currency: data.currency,
-        plan: PlanType.FREE, // Default to free plan since pricing is removed from onboarding
-      })).unwrap();
-      const businessProfile = onboardResult.business;
+      // Get current user's business profile
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) throw new Error('Not authenticated');
+
+      // Get user's business_id from users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('business_id')
+        .eq('id', authUser.id)
+        .single();
       
-      if (!businessProfile) {
-        throw new Error('Failed to create business profile');
+      if (userError || !userData?.business_id) {
+        throw new Error('Business profile not found');
       }
+      
+      const businessId = userData.business_id;
 
-      // Use the already imported supabase client for direct database operations
+      // Update business profile with additional details
+      const { error: updateError } = await supabase
+        .from('business_profiles')
+        .update({
+          address: data.address,
+          business_type: data.business_type,
+          email: data.email,
+          phone: data.phone,
+          onboarded: true,
+        })
+        .eq('id', businessId);
 
-      // Save staff members to Supabase with improved duplicate handling
+      if (updateError) throw updateError;
+
+      // Invite staff members via the invite_employee RPC
       if (data.staffMembers && data.staffMembers.length > 0) {
         for (const staff of data.staffMembers) {
           if (staff.name && staff.email) {
             try {
-              // Check if user already exists using Supabase client
-              const { data: existingUser, error: checkError } = await supabase
-                .from('users')
-                .select('id, email, business_id')
-                .eq('email', staff.email)
-                .maybeSingle();
+              const { error: inviteError } = await supabase.rpc('invite_employee', {
+                p_business_id: businessId,
+                p_email: staff.email.toLowerCase(),
+                p_role: (staff.role as UserRole) || UserRole.EMPLOYEE,
+              });
 
-              if (checkError && checkError.code !== 'PGRST116') {
-                console.error('Error checking existing user:', checkError);
-                continue;
-              }
-
-              // If user exists, skip adding them
-              if (existingUser) {
-                console.log(`User ${staff.email} already exists in system. Skipping.`);
-                toast(`Staff member ${staff.email} already exists and was skipped.`);
-                continue;
-              }
-
-              // Insert new staff member using Supabase client with proper upsert
-              const { error: staffError, data: newStaff } = await supabase
-                .from('users')
-                .upsert({
-                  business_id: businessProfile.id,
-                  name: staff.name,
-                  email: staff.email,
-                  role: staff.role || 'employee',
-                  password_hash: 'temp_password_hash', // Will be updated when staff sets their password
-                  is_active: true,
-                }, {
-                  onConflict: 'email',
-                  ignoreDuplicates: true,
-                })
-                .select()
-                .maybeSingle();
-
-              if (staffError) {
-                console.error('Error saving staff:', staffError);
-                if (staffError.code === '23505' || staffError.message.includes('duplicate key')) {
-                  toast(`Staff member ${staff.email} already exists and was skipped.`);
-                } else {
-                  toast.error(`Error saving staff ${staff.email}: ${staffError.message}`);
-                }
+              if (inviteError) {
+                console.error('Error inviting staff:', inviteError);
+                toast.error(`Failed to invite ${staff.email}: ${inviteError.message}`);
               } else {
-                console.log(`Successfully added new staff member: ${staff.email}`);
+                toast.success(`Invitation sent to ${staff.email}`);
               }
             } catch (error) {
               console.error('Error processing staff member:', staff.email, error);
-              toast.error(`Error processing staff member ${staff.email}`);
+              toast.error(`Error inviting staff member ${staff.email}`);
             }
           }
         }

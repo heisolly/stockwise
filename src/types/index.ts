@@ -1,6 +1,13 @@
 export enum UserRole {
   OWNER = 'OWNER',
+  MANAGER = 'MANAGER',
   EMPLOYEE = 'EMPLOYEE'
+}
+
+export enum InviteStatus {
+  PENDING = 'PENDING',
+  ACTIVE = 'ACTIVE',
+  INVITED = 'INVITED'
 }
 
 export enum PlanType {
@@ -14,6 +21,8 @@ export interface BusinessProfile {
   id: string;
   name: string;
   ownerName: string;
+  email?: string;
+  phone?: string;
   address?: string;
   business_type?: string;
   currency: string;
@@ -24,7 +33,7 @@ export interface BusinessProfile {
   createdAt: string;
   updatedAt: string;
   subdomain?: string;
-  email?: string;
+  inviteCode?: string;
   settings?: Record<string, any>;
 }
 
@@ -33,8 +42,11 @@ export interface User {
   businessId: string;
   name: string;
   email: string;
+  phone?: string;
   role: UserRole;
   isActive: boolean;
+  inviteStatus: InviteStatus;
+  invitedBy?: string;
   lastLogin?: string;
   createdAt: string;
   updatedAt: string;
@@ -42,11 +54,29 @@ export interface User {
 
 export interface StaffMember {
   id: string;
+  businessId: string;
   name: string;
   email: string;
+  phone?: string;
   role: UserRole;
+  isActive: boolean;
+  inviteStatus: InviteStatus;
+  invitedBy?: string;
   addedAt: string;
-  status: 'Active' | 'Inactive';
+  lastLogin?: string;
+}
+
+export interface OrganizationInvite {
+  id: string;
+  businessId: string;
+  email: string;
+  role: UserRole;
+  invitedBy?: string;
+  token: string;
+  expiresAt: string;
+  status: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
+  createdAt: string;
+  acceptedAt?: string;
 }
 
 export interface Product {
@@ -87,10 +117,15 @@ export interface Sale {
 export enum ActivityType {
   STOCK_IN = 'STOCK_IN',
   STOCK_OUT = 'STOCK_OUT',
+  STOCK_ADJUST = 'STOCK_ADJUST',
   SALE = 'SALE',
+  PRODUCT_CREATED = 'PRODUCT_CREATED',
+  PRODUCT_UPDATED = 'PRODUCT_UPDATED',
+  PRODUCT_DELETED = 'PRODUCT_DELETED',
   PRICE_CHANGE = 'PRICE_CHANGE',
   USER_ADDED = 'USER_ADDED',
   USER_REMOVED = 'USER_REMOVED',
+  USER_INVITED = 'USER_INVITED',
   EXPENSE = 'EXPENSE'
 }
 

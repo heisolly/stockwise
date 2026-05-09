@@ -21,16 +21,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/[workspace]/layout.js"
     ],
-    "/pricing/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/pricing/page.js"
-    ],
-    "/features/inventory/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/features/inventory/page.js"
-    ],
     "/register/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -45,6 +35,21 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/login/page.js"
+    ],
+    "/signup/owner/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/signup/owner/page.js"
+    ],
+    "/setup/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/setup/page.js"
+    ],
+    "/signup/employee/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/signup/employee/page.js"
     ]
   }
 }

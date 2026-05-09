@@ -2,38 +2,54 @@
 
 import { useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { RootState } from '@/store';
-import { OnboardingFlow }  from './OnboardingFlow';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, businessProfile } = useSelector(
     (state: RootState) => state.auth
   );
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    console.log('AuthGuard state:', { isLoading, isAuthenticated, user: !!user, businessProfile: !!businessProfile });
-    if (!isLoading && !isAuthenticated) {
-      console.log('AuthGuard: Redirecting to login');
-      router.push('/login');
-    }
-  }, [isLoading, isAuthenticated, router]);
+    setMounted(true);
+  }, []);
 
-  if (isLoading) {
-    console.log('AuthGuard: Loading...');
+  useEffect(() => {
+    if (isLoading || !mounted) return;
+
+    if (!isAuthenticated) {
+      router.replace('/login');
+      return;
+    }
+
+    if (businessProfile && !businessProfile.onboarded) {
+      router.replace('/setup');
+      return;
+    }
+  }, [isLoading, isAuthenticated, businessProfile, mounted, router]);
+
+  // Don't render anything until we know the auth + onboarding state
+  if (isLoading || !mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-[#004838]/30 border-t-[#004838] rounded-full animate-spin" />
+          <p className="text-sm text-slate-400 font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
     return null;
   }
-  if (!isAuthenticated || !user) {
-    console.log('AuthGuard: Not authenticated, showing null');
-    return null; // brief flash while redirecting
+
+  // Block rendering if not onboarded (prevent dashboard flash)
+  if (businessProfile && !businessProfile.onboarded) {
+    return null;
   }
 
-  if (!businessProfile?.onboarded) {
-    console.log('AuthGuard: Business not onboarded, showing OnboardingFlow');
-    return <OnboardingFlow />;
-  }
-
-  console.log('AuthGuard: Rendering children');
   return <>{children}</>;
 }
