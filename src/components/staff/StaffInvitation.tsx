@@ -16,7 +16,7 @@ interface DbInvitation {
   status: string;
   created_at: string;
   expires_at: string;
-  accepted_at?: string;
+  accepted_at?: string | null;
   token: string;
 }
 
