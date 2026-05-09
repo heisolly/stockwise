@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
-import { UserRole, User } from '@/types';
+import { UserRole, User, InviteStatus } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -70,6 +70,8 @@ export function StaffManager() {
         email: item.email,
         role: item.role,
         isActive: item.is_active,
+        inviteStatus: (item.invite_status as InviteStatus) || InviteStatus.ACTIVE,
+        invitedBy: item.invited_by,
         lastLogin: item.last_login,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
@@ -160,16 +162,18 @@ export function StaffManager() {
   });
 
   const getRoleBadge = (role: UserRole) => {
-    const styles = {
+    const styles: Record<UserRole, string> = {
       [UserRole.OWNER]: 'bg-purple-100 text-purple-800 border-purple-200',
+      [UserRole.MANAGER]: 'bg-amber-100 text-amber-800 border-amber-200',
       [UserRole.EMPLOYEE]: 'bg-blue-100 text-blue-800 border-blue-200',
     };
     return styles[role] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const getRoleLabel = (role: UserRole) => {
-    const labels = {
+    const labels: Record<UserRole, string> = {
       [UserRole.OWNER]: 'Owner',
+      [UserRole.MANAGER]: 'Manager',
       [UserRole.EMPLOYEE]: 'Employee',
     };
     return labels[role] || role;
